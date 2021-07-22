@@ -36,10 +36,6 @@ def erfen(arr, left, right, traget):
 
 
 
-
-
-
-
 ## **剑指offer**
 
 **参考[力扣](https://leetcode-cn.com/)中的[图解算法数据结构](https://leetcode-cn.com/leetbook/detail/illustration-of-algorithm/)与剑指offer实体书(第二版)**
@@ -173,6 +169,356 @@ class CQueue:
 
 
 
+#### [剑指 Offer 20. 表示数值的字符串](https://leetcode-cn.com/problems/biao-shi-shu-zhi-de-zi-fu-chuan-lcof/)
+
+> 自己思路
+
+按规则顺序找，好麻烦
+
+> 优化思路
+
+有限自动机，但是！还是想不清楚！！！人都想晕了，直接贴K神的了
+
+```python
+def isNumber(self, s: str) -> bool:
+        states = [
+            { ' ': 0, 's': 1, 'd': 2, '.': 4 }, # 0. start with 'blank'
+            { 'd': 2, '.': 4 } ,                # 1. 'sign' before 'e'
+            { 'd': 2, '.': 3, 'e': 5, ' ': 8 }, # 2. 'digit' before 'dot'
+            { 'd': 3, 'e': 5, ' ': 8 },         # 3. 'digit' after 'dot'
+            { 'd': 3 },                         # 4. 'digit' after 'dot' (‘blank’ before 'dot')
+            { 's': 6, 'd': 7 },                 # 5. 'e'
+            { 'd': 7 },                         # 6. 'sign' after 'e'
+            { 'd': 7, ' ': 8 },                 # 7. 'digit' after 'e'
+            { ' ': 8 }                          # 8. end with 'blank'
+        ]
+        p = 0                           # start with state 0
+        for c in s:
+            if '0' <= c <= '9': t = 'd' # digit
+            elif c in "+-": t = 's'     # sign
+            elif c in "eE": t = 'e'     # e or E
+            elif c in ". ": t = c       # dot, blank
+            else: t = '?'               # unknown
+            if t not in states[p]: return False
+            p = states[p][t]
+        return p in (2, 3, 7, 8)
+​```
+作者：Krahets
+链接：https://leetcode-cn.com/leetbook/read/illustration-of-algorithm/5dkal2/
+来源：力扣（LeetCode）
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+​```
+```
+
+
+
+#### [剑指 Offer 24. 反转链表](https://leetcode-cn.com/problems/fan-zhuan-lian-biao-lcof/)
+
+> 自己思路
+
+翻转链表关键点在于如果顺序反转，则会打断链表的连续性
+
+于是又两个办法：
+
++ 多记录一个，即遍历的时候不仅记录当前节点与当前节点的前一个，还记录当前节点的后一个节点
++ 递归，相当于保存了节点
+
+其中第一个想法是O(N)、O(1)，第二个想法是双O(N)因为保存了节点嘛
+
+```python
+class Solution:
+    def reverseList(self, head: ListNode) -> ListNode:
+        if not head:
+            return head
+        pre, cur, nex = None, head, head.next
+        while cur:
+            cur.next = pre
+            if nex:
+                pre, cur, nex = cur, nex, nex.next
+            else:
+                return cur
+```
+
+**递归方法的精髓在于返回值，通过逐层递归达到将最终返回的节点直接return的目的**
+
+```python
+class Solution:
+    def reverseList(self, head: ListNode) -> ListNode:
+        def my_reverse(pre, cur):
+            if not cur:
+                return pre
+            res = my_reverse(cur, cur.next)
+            cur.next = pre
+            return res
+        return my_reverse(None, head)
+```
+
+> 优化思路
+
+上述的第一种写法因为引入了变量nex，导致多了越界的判断
+
+**可以把nex换为临时变量tem，这样逻辑就会清晰很多**
+
+```python
+class Solution:
+    def reverseList(self, head: ListNode) -> ListNode:
+        pre, cur = None, head
+        while cur:
+            tem = cur.next
+            cur.next = pre
+            pre = cur
+            cur = tem
+        return pre
+```
+
+
+
+#### [剑指 Offer 30. 包含min函数的栈](https://leetcode-cn.com/problems/bao-han-minhan-shu-de-zhan-lcof/)
+
+> 自己思路
+
+栈的基础操作复杂度都是O(1)，这道题要求min也是O(1)
+
+求栈的min最朴素的想法就是建一个变量mark一下，但一直入栈就还好，一旦最小值被出栈了，就要遍历了，复杂度O(N)
+
+因为复杂度要求O(1)又是在栈里，所以考虑用栈的形式存储最小值
+
+```python
+class MinStack:
+    def __init__(self):
+        """
+        initialize your data structure here.
+        """
+        self.s1 = []
+        self.s2 = []
+
+    def push(self, x: int) -> None:
+        self.s1.append(x)
+        if not self.s2 or x<=self.s2[-1]:
+            self.s2.append(x)
+
+    def pop(self) -> None:
+        tem = self.s1.pop()
+        if tem == self.s2[-1]:
+            self.s2.pop()
+
+    def top(self) -> int:
+        return self.s1[-1]
+
+    def min(self) -> int:
+        return self.s2[-1]
+```
+
+除了题目要求pop不用返回，没别的可说的
+
+
+
+#### [剑指 Offer 35. 复杂链表的复制](https://leetcode-cn.com/problems/fu-za-lian-biao-de-fu-zhi-lcof/)
+
+> 自己思路
+
+最容易想到的办法是先顺序复制next，再遍历复制random，但链表里找到节点需要O(N)，所以时间复杂度O(N^2)
+
+从找节点这步优化，想到的就是哈希表（字典）存储节点，使用O(N)的空间复杂度换O(N)的时间复杂度
+
+```python
+class Solution:
+    def copyRandomList(self, head: 'Node') -> 'Node':
+        if not head:
+            return 
+        dic = {}
+        pre, newhead, head2 = None, None, head
+        while head2:
+            newnode = Node(head2.val, None, None)
+            dic[head2] = newnode
+            if pre:
+                pre.next = newnode
+            else:
+                newhead = newnode
+            pre = newnode
+            head2 = head2.next
+        pre.next = None
+        head2, head3 = head, newhead
+        while head2:
+            if head2.random:
+                head3.random = dic[head2.random]
+            else:
+                head3.random = None
+            head2 = head2.next
+            head3 = head3.next 
+        return newhead
+```
+
+自己脑袋也就想到这了，肯定还有更好的办法
+
+> 优化思路
+
+我们的目标是将复现random链接的复杂度降到O(1)
+
+如果在每个原节点后加一个新节点，这样新节点.random就可以通过原节点.random.next实现
+
+这种操作方法只需要遍历三遍链表(创建新节点，加random，分开)，时间复杂度O(N) 
+
+```python
+class Solution:
+    def copyRandomList(self, head: 'Node') -> 'Node':
+        if not head:
+            return 
+        head2 = head
+        while head2:
+            tem = head2.next
+            copy = Node(head2.val, tem, None)
+            head2.next = copy
+            head2 = tem
+        head2 = head
+        while head2:
+            tem = head2.next
+            if head2.random:
+                tem.random = head2.random.next
+            else:
+                tem.random =  None
+            head2 = tem.next
+        head2 = head
+        while head2:
+            tem = head2.next
+            head2 = tem.next
+            if head2:
+                tem.next = head2.next
+            else:
+                tem.next = None
+        return head.next
+```
+
+
+
+#### [剑指 Offer 58 - II. 左旋转字符串](https://leetcode-cn.com/problems/zuo-xuan-zhuan-zi-fu-chuan-lcof/)
+
+> 自己思路
+
+如果能用python中切片的性质就很简单
+
+切片的时间复杂度为O(N)，切片出来的两个list长度为N，空间复杂度O(N)
+
+```python
+class Solution:
+    def reverseLeftWords(self, s: str, n: int) -> str:
+        s = list(s)
+        return ''.join(s[n:] + s[:n])
+```
+
+如果不能用切片则可以一个一个append
+
+```python
+class Solution:
+    def reverseLeftWords(self, s: str, n: int) -> str:
+		out = []
+        for i in range(n,len(s)):
+            out.append(s[i])
+        for i in range(n):
+            out.append(s[i])
+        return ''.join(out)
+```
+
+如果也不能转数组还可以字符串拼接
+
+```python
+class Solution:
+    def reverseLeftWords(self, s: str, n: int) -> str:
+		out = ""
+        for i in range(n,len(s)):
+            out += s[i]
+        for i in range(n):
+            out += s[i]
+        return out
+```
+
+
+
+#### [剑指 Offer 59 - I. 滑动窗口的最大值](https://leetcode-cn.com/problems/hua-dong-chuang-kou-de-zui-da-zhi-lcof/)
+
+> 自己思路
+
+如果顺序按双指针遍历，每次取max，则时间复杂度为O(N)
+
+之前的30题实现栈的min()对优化这道题的思路有启发
+
+滑动窗口可以视为队列，本质上就是求特殊情况下的队列的max()
+
+参考30题可知，若求max则应该维持一个递减的队列
+
+```python
+class Solution:
+    def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:
+        if not num or k == 0:
+            return []
+        out, tem, pos = [], collections.deque(), 0
+        for i in range(k):
+            while tem and tem[-1]<nums[i]:
+                tem.pop()
+            tem.append(nums[i])
+        out.append(tem[0])
+        for i in range(k, len(nums)):
+            if tem[0] == nums[i-k]:
+                tem.popleft()
+            while tem and tem[-1]<nums[i]:
+                tem.pop()
+            tem.append(nums[i])
+            out.append(tem[0])
+        return out
+```
+
+需要注意的有三点
+
++ 面对思路比较复杂的题目，将步骤拆开写虽然看上去很难受，但至少复杂度和方法是一样的
++ 在界限明确时使用for range代替while，可以清楚好多
++ list.pop(-1)即list.pop()复杂度为O(1)，但其他位置pop复杂度都是O(N)，这种时候应该使用双向队列代替list
+
+```python
+collections.deque()
+```
+
+
+
+#### [剑指 Offer 59 - II. 队列的最大值](https://leetcode-cn.com/problems/dui-lie-de-zui-da-zhi-lcof/)
+
+> 自己思路
+
+有了上道题做基础，这道题的思路很清晰了，即维系一个降序排列的队列
+
+```python
+class MaxQueue:
+
+    def __init__(self):
+        self.yuanshi = collections.deque()
+        self.paixu = collections.deque()
+
+
+    def max_value(self) -> int:
+        return self.paixu[0] if self.paixu else -1
+
+    def push_back(self, value: int) -> None:
+        self.yuanshi.append(value)
+        while self.paixu and self.paixu[-1]<value:
+            self.paixu.pop()
+        self.paixu.append(value)
+
+    def pop_front(self) -> int:
+        if not self.yuanshi:
+            return -1 
+        tem = self.yuanshi.popleft()
+        if tem == self.paixu[0]:
+            self.paixu.popleft()
+        return tem
+```
+
+
+
+
+
+
+
+
+
 ***
 
 ### **动态规划**
@@ -237,11 +583,7 @@ class CQueue:
 时间复杂度O(NlogN) 空间复杂度O(1)
 
 ```python
-def findRepeatNumber(self, nums: List[int]) -> int:
-    nums.sort()
-    for i, _ in enumerate(nums[:-1]):
-        if nums[i] == nums[i+1]:
-            return nums[i]
+def findRepeatNumber(self, nums: List[int]) -> int:    nums.sort()    for i, _ in enumerate(nums[:-1]):        if nums[i] == nums[i+1]:            return nums[i]
 ```
 
 当然也可以用set()来记录
@@ -249,13 +591,7 @@ def findRepeatNumber(self, nums: List[int]) -> int:
 时间复杂度O(N) 空间复杂度O(N)
 
 ```python
-def findRepeatNumber(self, nums: List[int]) -> int:
-    a = set()
-    for n in nums:
-        if n in a:
-            return n
-        else:
-            a.add(n)
+def findRepeatNumber(self, nums: List[int]) -> int:    a = set()    for n in nums:        if n in a:            return n        else:            a.add(n)
 ```
 
 > 优化思路：
